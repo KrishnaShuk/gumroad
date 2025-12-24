@@ -4,7 +4,6 @@ import * as React from "react";
 import { formatPriceCentsWithCurrencySymbol } from "$app/utils/currency";
 
 import EmptyState from "$app/components/Admin/EmptyState";
-import PaginatedLoader, { type Pagination } from "$app/components/Admin/PaginatedLoader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "$app/components/ui/Table";
 
 type RevenueSource = "sales" | "collaborator" | "affiliate" | "credit";
@@ -16,13 +15,13 @@ type UnreviewedUser = {
   email: string;
   unpaid_balance_cents: number;
   revenue_sources: RevenueSource[];
+  payout_method: string | null;
   admin_url: string;
   created_at: string;
 };
 
 type PageProps = {
   users: UnreviewedUser[];
-  pagination: Pagination;
   total_count: number;
   cutoff_date: string;
 };
@@ -41,17 +40,17 @@ const RevenueBadge = ({ type }: { type: RevenueSource }) => {
 };
 
 const UnreviewedUsersPage = () => {
-  const { users, pagination, total_count, cutoff_date } = usePage<PageProps>().props;
+  const { users, total_count, cutoff_date } = usePage<PageProps>().props;
 
-  if (users.length === 0 && pagination.page === 1) {
+  if (users.length === 0) {
     return <EmptyState message="No unreviewed users with unpaid balance found." />;
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="text-sm text-muted">
-        Showing {users.length} of {total_count} unreviewed users with unpaid balance &gt; $10 (created since{" "}
-        {cutoff_date})
+        Top {users.length.toLocaleString()} of {total_count.toLocaleString()} unreviewed users with unpaid balance &gt;
+        $10 (created since {cutoff_date})
       </div>
       <Table>
         <TableHeader>
@@ -60,6 +59,7 @@ const UnreviewedUsersPage = () => {
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Revenue sources</TableHead>
+            <TableHead>Payout method</TableHead>
             <TableHead className="text-right">Unpaid balance</TableHead>
           </TableRow>
         </TableHeader>
@@ -88,6 +88,7 @@ const UnreviewedUsersPage = () => {
                   ))}
                 </div>
               </TableCell>
+              <TableCell>{user.payout_method || ""}</TableCell>
               <TableCell className="text-right font-mono">
                 {formatPriceCentsWithCurrencySymbol("usd", user.unpaid_balance_cents, {
                   symbolFormat: "short",
@@ -98,7 +99,6 @@ const UnreviewedUsersPage = () => {
           ))}
         </TableBody>
       </Table>
-      <PaginatedLoader itemsLength={users.length} pagination={pagination} only={["users", "pagination"]} />
     </div>
   );
 };
